@@ -113,7 +113,7 @@ function updateFinalURL() {
   if (env === 'production') parts[0] = 'www';
   else if (env === 'stage') parts[0] = 'stage';
   else if (env === 'local') parts[0] = 'l-www';
-  else if (env === 'ticket' && ticket) parts[0] = `${ticket}-www`;
+  else if (env === 'ticket' && ticket) parts[0] = `${ticket}`;
 
   url.hostname = parts.join('.');
 
@@ -155,6 +155,8 @@ function loadFromStorage() {
     }
     if (data.ticketId) ticketInput.value = data.ticketId;
     if (data.env) envSelect.value = data.env;
+
+    envSelect.dispatchEvent(new Event('change'));
   });
 }
 
@@ -180,7 +182,10 @@ ticketInput.addEventListener('input', () => {
 });
 
 openPageBtn.addEventListener('click', () => {
-  chrome.tabs.create({ url: currentURL.toString() });
+  const finalUrl = currentURL.toString();
+  urlInput.value = finalUrl;
+  chrome.tabs.create({ url: finalUrl });
 });
+
 
 document.addEventListener('DOMContentLoaded', loadFromStorage);
