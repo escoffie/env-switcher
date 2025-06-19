@@ -37,7 +37,7 @@ function parseAndRenderURL(url) {
 
   queryParamsSection.classList.remove('hidden');
   renderParams();
-  updateOpenButtonState();
+  updateFinalURL();
   saveToStorage();
 }
 
@@ -104,7 +104,32 @@ function renderParamField(key, value, container, isPreviewNonce = false) {
 }
 
 function updateFinalURL() {
-  currentURL.search = currentParams.toString();
+  const env = envSelect.value;
+  const ticket = ticketInput.value.trim();
+  const url = new URL(currentURL.toString());
+
+  const parts = url.hostname.split('.');
+
+  if (env === 'production') parts[0] = 'www';
+  else if (env === 'stage') parts[0] = 'stage';
+  else if (env === 'local') parts[0] = 'l-www';
+  else if (env === 'ticket' && ticket) parts[0] = `${ticket}-www`;
+
+  url.hostname = parts.join('.');
+
+  // Apply protocol and port logic
+  const isCardCritics = url.hostname.endsWith('cardcritics.com');
+  if (env === 'local' && isCardCritics) {
+    url.protocol = 'http:';
+    url.port = '8081';
+  } else {
+    url.protocol = 'https:';
+    url.port = '';
+  }
+
+  url.search = currentParams.toString();
+  currentURL = url;
+
   updateOpenButtonState();
 }
 
@@ -155,18 +180,7 @@ ticketInput.addEventListener('input', () => {
 });
 
 openPageBtn.addEventListener('click', () => {
-  const env = envSelect.value;
-  const ticket = ticketInput.value.trim();
-  const url = new URL(currentURL.toString());
-
-  const parts = url.hostname.split('.');
-  if (env === 'production') parts[0] = 'www';
-  else if (env === 'stage') parts[0] = 'stage';
-  else if (env === 'local') parts[0] = 'l-www';
-  else if (env === 'ticket' && ticket) parts[0] = `${ticket}-www`;
-
-  url.hostname = parts.join('.');
-  chrome.tabs.create({ url: url.toString() });
+  chrome.tabs.create({ url: currentURL.toString() });
 });
 
 document.addEventListener('DOMContentLoaded', loadFromStorage);
